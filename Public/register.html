@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - AI Stylist</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            max-width: 500px;
+            margin: auto;
+            background-color: #f4f4f4;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        input,
+        button {
+            display: block;
+            width: 100%;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-direction: column;
+        }
+
+        /* Spinner CSS */
+        .spinner {
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top: 6px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Register</h2>
+
+    <input type="text" id="name" placeholder="Full Name" required />
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="register()">Register</button>
+    <!-- Add this just below the Register button -->
+    <button onclick="goToLogin()" style="background-color: #6c757d;">Back to Login</button>
+
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        Registering, please wait...
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            updateProfile,
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbNx-iC7hpVhJ3gNFAle8Er63H-h1uPho",
+            authDomain: "ai-stylist-72d45.firebaseapp.com",
+            projectId: "ai-stylist-72d45",
+            storageBucket: "ai-stylist-72d45.firebasestorage.app",
+            messagingSenderId: "1035134271941",
+            appId: "1:1035134271941:web:1e2cdb23d863e6f2798bac",
+            measurementId: "G-1C72C93P0B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const registerBtn = document.querySelector('button');
+
+        window.register = async function () {
+            loadingOverlay.style.display = 'flex';
+            registerBtn.disabled = true;
+
+            const name = document.getElementById("name").value.trim();
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            if (!name) {
+                alert("Please enter your name.");
+                loadingOverlay.style.display = 'none';
+                registerBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: name });
+
+                const idToken = await userCredential.user.getIdToken();
+
+                const res = await fetch("/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ idToken }),
+                });
+
+                if (res.ok) {
+                    window.location.href = "/home";
+                } else {
+                    alert("Login failed");
+                }
+            } catch (err) {
+                alert("Error: " + err.message);
+                console.error(err);
+            } finally {
+                loadingOverlay.style.display = 'none';
+                registerBtn.disabled = false;
+            }
+        };
+
+        window.goToLogin = function () {
+            window.location.href = "/"; // or "/login" if your login page is hosted at that route
+        };
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .email-btn {
+            background-color: #2563eb;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .google-btn {
+            background-color: #f4f4f4;
+            border: 1px solid #d1d5db;
+        }
+
+        .bottom-text {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .bottom-text a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .bottom-text a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h2>Login</h2>
+
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
+
+        <button class="email-btn" onclick="emailLogin()">Login with Email</button>
+        <button class="google-btn" onclick="googleLogin()">Login with Google</button>
+
+        <p class="bottom-text">Don't have an account? <a href="/register">Register here</a></p>
+    </div>
+
+    <div id="loadingOverlay" style="
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2563eb;
+">
+        Logging in...
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+        getAuth,
+        GoogleAuthProvider,
+        signInWithPopup,
+        signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCbNx-iC7hpVhJ3gNFAle8Er63H-h1uPho",
+        authDomain: "ai-stylist-72d45.firebaseapp.com",
+        projectId: "ai-stylist-72d45",
+        storageBucket: "ai-stylist-72d45.firebasestorage.app",
+        messagingSenderId: "1035134271941",
+        appId: "1:1035134271941:web:1e2cdb23d863e6f2798bac",
+        measurementId: "G-1C72C93P0B"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const emailBtn = document.querySelector(".email-btn");
+    const googleBtn = document.querySelector(".google-btn");
+
+    function setLoading(loading) {
+        loadingOverlay.style.display = loading ? "flex" : "none";
+        emailBtn.disabled = loading;
+        googleBtn.disabled = loading;
+    }
+
+    async function login(idToken) {
+        const res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+        });
+
+        if (res.ok) window.location.href = '/home';
+        else {
+            alert('Login failed');
+            setLoading(false);
+        }
+    }
+
+    window.googleLogin = async () => {
+        try {
+            setLoading(true);
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            const idToken = await result.user.getIdToken();
+            login(idToken);
+        } catch (err) {
+            alert('Error: ' + err.message);
+            setLoading(false);
+        }
+    };
+
+    window.emailLogin = async () => {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        try {
+            setLoading(true);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const idToken = await userCredential.user.getIdToken();
+            login(idToken);
+        } catch (err) {
+            alert('Error: ' + err.message);
+            setLoading(false);
+        }
+    };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Upload Clothing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        nav {
+            width: 100%;
+            background-color: #222;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 15px;
+            background-color: #444;
+            padding: 6px 12px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #666;
+        }
+
+        #logout-btn {
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 15px;
+            transition: background-color 0.3s;
+        }
+
+        #logout-btn:hover {
+            background-color: #cc0000;
+        }
+
+        h2 {
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        button[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <span id="user-name">Loading...</span>
+        <div>
+            <a href="/home.html">Home</a>
+            <button id="logout-btn">Logout</button>
+        </div>
+    </nav>
+
+    <h2>Upload Clothing Image</h2>
+
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" name="image" id="image" accept="image/*" required />
+        <button type="submit">Upload</button>
+    </form>
+
+    <p id="status"></p>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbNx-iC7hpVhJ3gNFAle8Er63H-h1uPho",
+            authDomain: "ai-stylist-72d45.firebaseapp.com",
+            projectId: "ai-stylist-72d45",
+            storageBucket: "ai-stylist-72d45.firebasestorage.app",
+            messagingSenderId: "1035134271941",
+            appId: "1:1035134271941:web:1e2cdb23d863e6f2798bac",
+            measurementId: "G-1C72C93P0B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const userNameEl = document.getElementById("user-name");
+        const logoutBtn = document.getElementById("logout-btn");
+        const statusEl = document.getElementById("status");
+        const uploadForm = document.getElementById("upload-form");
+        const uploadBtn = uploadForm.querySelector("button");
+
+        let currentUser;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                userNameEl.textContent = `Logged in as: ${user.displayName || user.email}`;
+            } else {
+                window.location.href = "/index.html";
+            }
+        });
+
+        logoutBtn.onclick = async () => {
+            await signOut(auth);
+            window.location.href = "/index.html";
+        };
+
+        uploadForm.onsubmit = async (e) => {
+            e.preventDefault();
+
+            const file = document.getElementById("image").files[0];
+            if (!file || !currentUser) return;
+
+            uploadBtn.disabled = true;
+            statusEl.textContent = "⏳ Uploading...";
+
+            try {
+                const idToken = await currentUser.getIdToken();
+                const formData = new FormData();
+                formData.append("image", file);
+
+                const res = await fetch("/api/upload-clothing", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${idToken}`
+                    },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    statusEl.textContent = "✅ Upload successful!";
+                    uploadForm.reset();
+                } else {
+                    const err = await res.text();
+                    statusEl.textContent = `❌ Upload failed: ${err}`;
+                }
+            } catch (err) {
+                statusEl.textContent = `❌ Error: ${err.message}`;
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+
+</html>

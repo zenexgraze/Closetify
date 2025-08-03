@@ -1,0 +1,11 @@
+# Environment file
+*.env
+
+# Node modules
+node_modules/
+
+# Firebase SDK (in Public folder)
+Public/firebase-sdk.txt
+
+# Firebase service account (in Config folder)
+Config/firebase-service-account.json

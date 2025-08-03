@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>My Clothes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #clothesContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .clothing-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .clothing-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        .item-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        #back {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <a id="back" href="/home.html">← Back to Home</a>
+    <h1>My Clothes</h1>
+    <div id="clothesContainer">Loading...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbNx-iC7hpVhJ3gNFAle8Er63H-h1uPho",
+            authDomain: "ai-stylist-72d45.firebaseapp.com",
+            projectId: "ai-stylist-72d45",
+            storageBucket: "ai-stylist-72d45.appspot.com",
+            messagingSenderId: "1035134271941",
+            appId: "1:1035134271941:web:1e2cdb23d863e6f2798bac",
+            measurementId: "G-1C72C93P0B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const clothesContainer = document.getElementById('clothesContainer');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/index.html";
+                return;
+            }
+
+            const idToken = await user.getIdToken();
+
+            try {
+                const response = await fetch('/api/user/clothes/me', {
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    clothesContainer.innerText = 'Failed to fetch clothes.';
+                    return;
+                }
+
+                const clothes = await response.json();
+                if (clothes.length === 0) {
+                    clothesContainer.innerText = 'No clothes uploaded yet.';
+                    return;
+                }
+
+                clothesContainer.innerHTML = '';
+                clothes.forEach(item => {
+                    const imgSrc = `data:${item.contentType};base64,${item.imageData}`;
+                    const detectedInfo = item.detectedItems.map(d => `${d.item} (${d.color})`).join(', ');
+
+                    const card = document.createElement('div');
+                    card.className = 'clothing-card';
+                    card.innerHTML = `
+            <img src="${imgSrc}" alt="Clothing Image">
+            <div class="item-info">
+            <strong>Detected:</strong> ${detectedInfo || 'N/A'}<br>
+            <small>Uploaded: ${new Date(item.createdAt).toLocaleString()}</small>
+            </div>
+        `;
+                    clothesContainer.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error(err);
+                clothesContainer.innerText = 'Error loading clothes.';
+            }
+        });
+    </script>
+</body>
+
+</html>

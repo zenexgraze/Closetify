@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Stylist Chat</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 90vh;
+            /* Adjust as needed */
+            margin: 20px;
+        }
+
+        .chat-header {
+            background-color: #6a0dad;
+            /* Purple */
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #e9ecef;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-ai {
+            align-self: flex-start;
+            background-color: #f8f9fa;
+            /* Light grey */
+            color: #212529;
+            border-bottom-left-radius: 2px;
+        }
+
+        .message-user {
+            align-self: flex-end;
+            background-color: #d1c4e9;
+            /* Light purple */
+            color: #311b92;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message-image-preview {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            align-items: center;
+            /* Vertically align items */
+        }
+
+        .chat-input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 25px;
+            margin-right: 10px;
+            font-size: 1em;
+            outline: none;
+        }
+
+        .chat-input-area button {
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            white-space: nowrap;
+            /* Prevent text from wrapping */
+        }
+
+        .chat-input-area button:hover {
+            background-color: #512da8;
+        }
+
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #e9ecef;
+            text-align: center;
+        }
+
+        .upload-area button {
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .upload-area button:hover {
+            background-color: #512da8;
+        }
+
+        #fileInput,
+        #additionalFileInput {
+            display: none;
+            /* Hide the default file inputs */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="chat-header">AI Stylist Chat</div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="upload-area" id="initialUploadArea">
+                <p>Welcome to your personal AI Stylist! Let's get started.</p>
+                <p>Please upload a photo of the clothing items you want to work with.</p>
+                <input type="file" id="fileInput" accept="image/*">
+                <button onclick="document.getElementById('fileInput').click()">Upload Photo</button>
+            </div>
+        </div>
+        <div class="chat-input-area" id="chatInputArea" style="display: none;">
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <input type="file" id="additionalFileInput" accept="image/*" style="display: none;">
+            <button onclick="document.getElementById('additionalFileInput').click()"
+                title="Upload more photos">🖼️</button>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const fileInput = document.getElementById('fileInput'); // For initial upload
+        const additionalFileInput = document.getElementById('additionalFileInput'); // For subsequent uploads
+        const initialUploadArea = document.getElementById('initialUploadArea');
+        const chatInputArea = document.getElementById('chatInputArea');
+        const userInput = document.getElementById('userInput');
+
+        // Store detected items and conversation history
+        let accumulatedClothingItems = [];
+        let conversationHistory = []; // To store { role: 'user/model', parts: [{text: '...'}] } for Gemini API
+
+        const backendUrl = 'http://localhost:3000'; // Your Node.js backend URL
+
+        // --- Utility Functions for Chat Display ---
+        function addMessage(text, sender, isImage = false, imageUrl = '') {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-bubble', `message-${sender}`);
+
+            if (isImage) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.classList.add('message-image-preview');
+                messageDiv.appendChild(img);
+                const textSpan = document.createElement('span');
+                textSpan.textContent = text;
+                messageDiv.appendChild(textSpan);
+            } else {
+                messageDiv.textContent = text;
+            }
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+        }
+
+        // --- Event Listeners ---
+        fileInput.addEventListener('change', handleFileUpload); // For initial upload button
+        additionalFileInput.addEventListener('change', handleFileUpload); // For subsequent upload button
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // --- Core Logic ---
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Determine if this is the very first upload (from the initial area)
+            const isInitialUpload = (event.target.id === 'fileInput');
+
+            if (isInitialUpload) {
+                initialUploadArea.style.display = 'none'; // Hide initial upload section
+                chatInputArea.style.display = 'flex';     // Show chat input
+            }
+
+            addMessage("Uploading photo...", "user", true, URL.createObjectURL(file));
+
+            const formData = new FormData();
+            formData.append('image', file);
+            // formData.append('image', fs.createReadStream(imagePath));
+
+            try {
+                const response = await fetch(`${backendUrl}/ai-chat/upload`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    // The backend always accumulates items into allAccumulatedItems, which is good
+                    accumulatedClothingItems = data.allAccumulatedItems;
+                    const detectedItemsText = data.detectedItemsFromImage.map(item => `${item.color} ${item.item}`).join(', ') || "no distinct items";
+
+                    if (isInitialUpload) {
+                        addMessage(`Photo uploaded successfully! I detected: ${detectedItemsText}.`, "ai");
+                        const initialQuestion = `Okay, I'm ready to help you style. What's the mood or occasion you're dressing for today?`;
+                        addMessage(initialQuestion, "ai");
+                        // IMPORTANT: We DO NOT push this initial AI message to conversationHistory
+                        // because Gemini expects the *first* entry in 'history' to be 'user'.
+                        // The actual conversation history will start building when the user replies.
+                    } else {
+                        // For subsequent uploads, just confirm the addition of new items
+                        addMessage(`New photo uploaded. Detected: ${detectedItemsText}. All available items updated for styling.`, "ai");
+                    }
+
+                } else {
+                    addMessage(`Error uploading photo: ${data.error || 'Unknown error'}`, "ai");
+                }
+            } catch (error) {
+                console.error('Upload failed:', error);
+                addMessage(`An error occurred during upload. Please try again.`, "ai");
+            }
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, "user");
+            userInput.value = ''; // Clear input
+
+            // Add user message to history
+            conversationHistory.push({
+                role: 'user',
+                parts: [{ text: message }]
+            });
+
+            addMessage("Thinking...", "ai"); // Temporary "thinking" message
+
+            try {
+                const response = await fetch(`${backendUrl}/generate-outfit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: conversationHistory, // Send full history for backend to use
+                        accumulatedItems: accumulatedClothingItems // Also send items for context
+                    }),
+                });
+                const data = await response.json();
+
+                // Remove "Thinking..." message
+                // Check if the last child is indeed the "Thinking..." message before removing
+                if (chatMessages.lastChild && chatMessages.lastChild.textContent === "Thinking...") {
+                    chatMessages.removeChild(chatMessages.lastChild);
+                }
+
+
+                if (response.ok) {
+                    addMessage(data.outfitSuggestion, "ai");
+                    // Add AI's response to history
+                    conversationHistory.push({
+                        role: 'model',
+                        parts: [{ text: data.outfitSuggestion }]
+                    });
+                } else {
+                    addMessage(`AI Stylist Error: ${data.error || 'Could not generate suggestion.'}`, "ai");
+                }
+            } catch (error) {
+                console.error('Chat API failed:', error);
+                // Try to remove "Thinking..." even on error
+                if (chatMessages.lastChild && chatMessages.lastChild.textContent === "Thinking...") {
+                    chatMessages.removeChild(chatMessages.lastChild);
+                }
+                addMessage(`An error occurred while getting an outfit suggestion.`, "ai");
+            }
+        }
+
+        
+    </script>
+</body>
+
+</html>

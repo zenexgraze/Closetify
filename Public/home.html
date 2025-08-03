@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f2f2f2;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        #logoutBtn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #logoutBtn:hover {
+            background-color: #c0392b;
+        }
+
+        #userInfo {
+            margin-top: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .action-button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Welcome!</h1>
+        <button id="logoutBtn" onclick="logout()">Logout</button>
+    </header>
+
+    <div id="userInfo">Loading user info...</div>
+
+    <div class="button-container">
+        <a class="action-button" href="/upload.html">Upload Clothing Image</a>
+        <a class="action-button" href="/tryon">Launch Virtual Try-On</a>
+        <a class="action-button" href="/my-clothes.html">View My Clothes</a>
+        <a class="action-button" href="/ai-chat">Ai Chat</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbNx-iC7hpVhJ3gNFAle8Er63H-h1uPho",
+            authDomain: "ai-stylist-72d45.firebaseapp.com",
+            projectId: "ai-stylist-72d45",
+            storageBucket: "ai-stylist-72d45.firebasestorage.app",
+            messagingSenderId: "1035134271941",
+            appId: "1:1035134271941:web:1e2cdb23d863e6f2798bac",
+            measurementId: "G-1C72C93P0B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        window.logout = async function () {
+            await signOut(auth);
+            window.location.href = "/index.html";
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/index.html";
+                return;
+            }
+
+            try {
+                const idToken = await user.getIdToken();
+                const res = await fetch('/api/user/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('userInfo').innerHTML = `
+            <p><strong>Name:</strong> ${data.name}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+          `;
+                } else {
+                    document.getElementById('userInfo').innerText = 'Failed to load user info.';
+                }
+            } catch (err) {
+                document.getElementById('userInfo').innerText = 'Error fetching user info.';
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+
+</html>
