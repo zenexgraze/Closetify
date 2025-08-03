@@ -1,127 +1,143 @@
-# 👗✨ AI Stylist Backend
 
-**Your Personal Wardrobe Advisor — Backend API**
+# 🧠 AI Stylist Chatbot
 
-This is the backend server for **AI Stylist**, a mobile app that helps users digitize their wardrobe, get outfit suggestions, and personalize their style.  
+An intelligent virtual wardrobe assistant that suggests outfit combinations based on uploaded clothing images — powered by **Gemini 1.5 Flash**, a **Colab-based vision model**, and **Firebase authentication**.
 
-This version is an **MVP** built with **Node.js (Express.js)**, **MongoDB**, and **Firebase Auth** — using simple hardcoded outfit rules (no LLM yet).
+![AI Stylist Banner](https://user-images.githubusercontent.com/your-banner-image)
 
 ---
 
 ## 🚀 Features
 
-✅ Secure Firebase Authentication  
-✅ Upload & manage wardrobe items  
-✅ Get outfit suggestions with basic styling rules  
-✅ Save user feedback on outfits  
-✅ MongoDB for storage  
-✅ Designed to add Computer Vision & GPT later
+✨ **Clothing Image Upload + Tagging**  
+Upload images of shirts or pants. A Colab-hosted vision model detects and labels them.
+
+🤖 **Gemini-Powered Chatbot**  
+Get personalized outfit suggestions or correct item tags using Gemini 1.5 Flash.
+
+🧠 **Wardrobe Memory**  
+Your uploads are saved and reused for intelligent outfit recommendations.
+
+🔐 **User Auth with Firebase**  
+Log in securely with Firebase to view and manage your wardrobe.
+
+🧱 **Clean Architecture**  
+Modular routes, middleware, and controller setup for scalability.
 
 ---
 
-## 🗂️ Tech Stack
+## 📁 Folder Structure
 
-- **Node.js + Express.js**
-- **MongoDB** (via Mongoose)
-- **Firebase Admin SDK**
-- **CORS**
-- **dotenv**
-
----
-
-## 📂 Project Structure
-
-ai-stylist-backend/
-├── server.js
-├── .env
-├── models/
-│ ├── User.js
-│ ├── WardrobeItem.js
-│ └── Feedback.js
-├── routes/
-│ ├── wardrobe.js
-│ ├── stylist.js
-├── middleware/
-│ └── auth.js
-├── stylistRules.js
-├── uploads/ (optional for local images)
+```
+ai-stylist-chatbot/
+│
+├── app.js                   # Entry point
+├── .env                     # Environment variables
 ├── package.json
-
+│
+├── Controllers/
+│   └── chatController.js    # Gemini and wardrobe logic
+│
+├── Middleware/
+│   └── verifyFirebaseToken.js  # Firebase auth middleware
+│
+├── Models/
+│   └── ClothingItem.js      # Mongoose schema for wardrobe items
+│
+├── Routes/
+│   └── ai-chat.js           # /upload and /generate-outfit routes
+│
+├── Public/
+│   ├── home.html            # Upload page
+│   ├── upload.html          # Alternative upload UI
+│   └── tryon.html           # AR-based try-on interface
+│
+├── Uploads/
+│   └── <image-files>        # Temp storage for uploaded images
+```
 
 ---
 
-## ⚙️ Setup Instructions
+## 🔧 Getting Started
 
-### 1️⃣ Clone the Repo
+### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/ai-stylist-backend.git
-cd ai-stylist-backend
-2️⃣ Install Dependencies
+git clone https://github.com/your-username/ai-stylist-chatbot.git
+cd ai-stylist-chatbot
+```
 
+### 2. Install dependencies
+
+```bash
 npm install
-3️⃣ Add .env File
-Create a .env file:
+```
 
-MONGODB_URI=your_mongodb_uri
-GOOGLE_APPLICATION_CREDENTIALS=JSON_STRINGIFY_YOUR_GOOGLE_APPLICATION_CREDENTIALS
-PORT=5000
-MongoDB URI: MongoDB Atlas
+### 3. Setup your environment variables
 
-Firebase Service Account: Generate a private key JSON in Firebase Console → Project Settings → Service Accounts → then JSON.stringify the whole file.
+Create a `.env` file in the root with:
 
-4️⃣ Run the Server
+```env
+MONGO_URI=<your_mongodb_uri>
+GEMINI_API_KEY=<your_gemini_api_key>
+COLAB_API_URL=<your_colab_api_endpoint>
+```
 
-npm run dev
-(Uses nodemon for hot reload in dev mode)
+### 4. Start the server
 
-🔐 Firebase Auth
-Your React Native app must send a Firebase ID token in every request header:
+```bash
+node app.js
+```
 
-Authorization: Bearer <firebase_id_token>
-The backend checks this on every protected route.
+Server will run on `http://localhost:3000`
 
-📌 API Endpoints
-📍 Wardrobe
-Method	Route	Description
-POST	/api/wardrobe/upload	Add wardrobe item
-GET	/api/wardrobe/list	Get wardrobe items
+---
 
-📍 Stylist
-Method	Route	Description
-POST	/api/stylist/suggest	Get outfit suggestion based on simple rules
-POST	/api/stylist/feedback	Save user feedback
+## 🗂️ API Endpoints
 
+| Route                 | Description                              |
+|----------------------|------------------------------------------|
+| `POST /upload`       | Uploads image → Detects clothing item    |
+| `POST /generate-outfit` | Prompts Gemini for suggestions or corrections |
 
+---
 
-✅ Example Request
-POST /api/stylist/suggest
+## 💬 Sample Gemini Prompt
 
-Headers:
-  Authorization: Bearer <firebase_id_token>
+```txt
+Here's what the user has:
+- Shirt: black, cotton
+- Pant: beige chinos
 
-Body:
-{
-  "occasion": "casual"
-}
-Example Response:
+Suggest a modern and casual outfit. Short and stylish.
+```
 
-{
-  "suggestion": "Blue T-shirt + Jeans + Sneakers"
-}
+---
 
+## 🧪 Tech Stack
 
-🧩 Roadmap
-Integrate CV to auto-tag clothes
+| Layer         | Tech Used           |
+|---------------|---------------------|
+| Frontend      | HTML, Vanilla JS    |
+| Backend       | Node.js, Express    |
+| AI Chat       | Gemini 1.5 Flash    |
+| Vision Model  | Python (Colab API)  |
+| Auth          | Firebase Auth       |
+| Database      | MongoDB (Mongoose)  |
+| Image Uploads | Multer              |
 
-Upgrade outfit suggestions to use GPT (LLM)
+---
 
-Add AR virtual try-on
+## 🙌 Contributing
 
-Improve personalization with feedback loops
+PRs and suggestions are welcome! If you'd like to improve the chatbot's intelligence or frontend UI, open an issue or submit a pull request.
 
+---
 
+## 📄 License
 
-🙌 Credits
+MIT License. Free to use, share, and build on.
 
+---
 
+> Built with 👗🧠 by [YourName]
