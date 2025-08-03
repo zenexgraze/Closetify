@@ -3,8 +3,6 @@
 
 An intelligent virtual wardrobe assistant that suggests outfit combinations based on uploaded clothing images — powered by **Gemini 1.5 Flash**, a **Colab-based vision model**, and **Firebase authentication**.
 
-![AI Stylist Banner](https://user-images.githubusercontent.com/your-banner-image)
-
 ---
 
 ## 🚀 Features
@@ -134,10 +132,4 @@ PRs and suggestions are welcome! If you'd like to improve the chatbot's intellig
 
 ---
 
-## 📄 License
-
-MIT License. Free to use, share, and build on.
-
----
-
-> Built with 👗🧠 by [YourName]
+> Built with 👗🧠 by passionate students
